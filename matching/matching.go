@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/ktr0731/go-fuzzyfinder/scoring"
+	"github.com/mitubaEX/go-fuzzyfinder/scoring"
 )
 
 // Matched represents a result of FindAll.

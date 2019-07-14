@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	fuzzyfinder "github.com/ktr0731/go-fuzzyfinder"
 	isatty "github.com/mattn/go-isatty"
+	fuzzyfinder "github.com/mitubaEX/go-fuzzyfinder"
 	"github.com/spf13/pflag"
 )
 

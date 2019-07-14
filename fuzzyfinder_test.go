@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	fuzzyfinder "github.com/ktr0731/go-fuzzyfinder"
+	fuzzyfinder "github.com/mitubaEX/go-fuzzyfinder"
 	termbox "github.com/nsf/termbox-go"
 )
 

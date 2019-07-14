@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	fuzzyfinder "github.com/ktr0731/go-fuzzyfinder"
+	fuzzyfinder "github.com/mitubaEX/go-fuzzyfinder"
 	termbox "github.com/nsf/termbox-go"
 )
 

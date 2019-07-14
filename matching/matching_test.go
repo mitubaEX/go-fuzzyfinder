@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ktr0731/go-fuzzyfinder/matching"
+	"github.com/ktr0731/mitubaEX/matching"
 )
 
 func TestMatch(t *testing.T) {
