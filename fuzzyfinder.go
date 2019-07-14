@@ -14,8 +14,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/ktr0731/go-fuzzyfinder/matching"
 	runewidth "github.com/mattn/go-runewidth"
+	"github.com/mitubaEX/go-fuzzyfinder/matching"
 	termbox "github.com/nsf/termbox-go"
 	"github.com/pkg/errors"
 )
@@ -111,24 +111,48 @@ func (f *finder) _draw() {
 		maxWidth = width/2 - 1
 	}
 
-	// input line
-	f.term.setCell(0, height-1, '>', termbox.ColorBlue, termbox.ColorDefault)
+	if f.opt.reverse {
+		// input line
+		f.term.setCell(0, 1, '>', termbox.ColorBlue, termbox.ColorDefault)
+	} else {
+		// input line
+		f.term.setCell(0, height-1, '>', termbox.ColorBlue, termbox.ColorDefault)
+	}
 	var r rune
 	var w int
 	for _, r = range f.state.input {
-		// Add a space between '>' and runes.
-		f.term.setCell(2+w, height-1, r, termbox.ColorDefault|termbox.AttrBold, termbox.ColorDefault)
+		if f.opt.reverse {
+			// Add a space between '>' and runes.
+			f.term.setCell(2+w, 1, r, termbox.ColorDefault|termbox.AttrBold, termbox.ColorDefault)
+		} else {
+			// Add a space between '>' and runes.
+			f.term.setCell(2+w, height-1, r, termbox.ColorDefault|termbox.AttrBold, termbox.ColorDefault)
+		}
 		w += runewidth.RuneWidth(r)
 	}
-	f.term.setCursor(2+f.state.cursorX, height-1)
+
+	if f.opt.reverse {
+		f.term.setCursor(2+f.state.cursorX, 1)
+	} else {
+		f.term.setCursor(2+f.state.cursorX, height-1)
+	}
 
 	// Number line
 	for i, r := range fmt.Sprintf("%d/%d", len(f.state.matched), len(f.state.items)) {
-		f.term.setCell(2+i, height-2, r, termbox.ColorYellow, termbox.ColorDefault)
+		if f.opt.reverse {
+			f.term.setCell(2+i, 2, r, termbox.ColorYellow, termbox.ColorDefault)
+		} else {
+			f.term.setCell(2+i, height-2, r, termbox.ColorYellow, termbox.ColorDefault)
+		}
 	}
 
+	var itemAreaHeight int
 	// Item lines
-	itemAreaHeight := height - 2 - 1
+	if f.opt.reverse {
+		itemAreaHeight = 3 + 1
+	} else {
+		itemAreaHeight = height - 2 - 1
+	}
 	matched := f.state.matched
 	offset := f.state.cursorY
 	y := f.state.y
@@ -140,13 +164,22 @@ func (f *finder) _draw() {
 			break
 		}
 		if i == f.state.cursorY {
-			f.term.setCell(0, height-3-i, '>', termbox.ColorRed, termbox.ColorBlack)
-			f.term.setCell(1, height-3-i, ' ', termbox.ColorRed, termbox.ColorBlack)
+			if f.opt.reverse {
+				f.term.setCell(0, 3+i, '>', termbox.ColorRed, termbox.ColorBlack)
+				f.term.setCell(1, 3+i, ' ', termbox.ColorRed, termbox.ColorBlack)
+			} else {
+				f.term.setCell(0, height-3-i, '>', termbox.ColorRed, termbox.ColorBlack)
+				f.term.setCell(1, height-3-i, ' ', termbox.ColorRed, termbox.ColorBlack)
+			}
 		}
 
 		if f.opt.multi {
 			if _, ok := f.state.selection[m.Idx]; ok {
-				f.term.setCell(1, height-3-i, '>', termbox.ColorRed, termbox.ColorBlack)
+				if f.opt.reverse {
+					f.term.setCell(1, 3+i, '>', termbox.ColorRed, termbox.ColorBlack)
+				} else {
+					f.term.setCell(1, height-3-i, '>', termbox.ColorRed, termbox.ColorBlack)
+				}
 			}
 		}
 
@@ -171,15 +204,28 @@ func (f *finder) _draw() {
 			}
 
 			rw := runewidth.RuneWidth(r)
-			// Shorten item cells.
-			if w+rw+2 > maxWidth {
-				f.term.setCell(w, height-3-i, '.', fg, bg)
-				f.term.setCell(w+1, height-3-i, '.', fg, bg)
-				w += 2
-				break
+			if f.opt.reverse {
+				// Shorten item cells.
+				if w+rw+2 > maxWidth {
+					f.term.setCell(w, 3+i, '.', fg, bg)
+					f.term.setCell(w+1, 3+i, '.', fg, bg)
+					w += 2
+					break
+				} else {
+					f.term.setCell(w, 3+i, r, fg, bg)
+					w += rw
+				}
 			} else {
-				f.term.setCell(w, height-3-i, r, fg, bg)
-				w += rw
+				// Shorten item cells.
+				if w+rw+2 > maxWidth {
+					f.term.setCell(w, height-3-i, '.', fg, bg)
+					f.term.setCell(w+1, height-3-i, '.', fg, bg)
+					w += 2
+					break
+				} else {
+					f.term.setCell(w, height-3-i, r, fg, bg)
+					w += rw
+				}
 			}
 		}
 	}
@@ -350,23 +396,45 @@ func (f *finder) readKey() error {
 			f.state.input = f.state.input[f.state.x:]
 			f.state.cursorX = 0
 			f.state.x = 0
-		case termbox.KeyArrowUp, termbox.KeyCtrlK, termbox.KeyCtrlP:
-			f.stateMu.Lock()
-			defer f.stateMu.Unlock()
-
-			if f.state.y+1 < len(f.state.matched) {
-				f.state.y++
-			}
-			_, height := f.term.size()
-			if f.state.cursorY+1 < height-2 && f.state.cursorY+1 < len(f.state.matched) {
-				f.state.cursorY++
-			}
 		case termbox.KeyArrowDown, termbox.KeyCtrlJ, termbox.KeyCtrlN:
-			if f.state.y > 0 {
-				f.state.y--
+			if f.opt.reverse {
+				f.stateMu.Lock()
+				defer f.stateMu.Unlock()
+
+				if f.state.y+1 < len(f.state.matched) {
+					f.state.y++
+				}
+				_, height := f.term.size()
+				if f.state.cursorY+1 < height-2 && f.state.cursorY+1 < len(f.state.matched) {
+					f.state.cursorY++
+				}
+			} else {
+				if f.state.y > 0 {
+					f.state.y--
+				}
+				if f.state.cursorY-1 >= 0 {
+					f.state.cursorY--
+				}
 			}
-			if f.state.cursorY-1 >= 0 {
-				f.state.cursorY--
+		case termbox.KeyArrowUp, termbox.KeyCtrlK, termbox.KeyCtrlP:
+			if f.opt.reverse {
+				if f.state.y > 0 {
+					f.state.y--
+				}
+				if f.state.cursorY-1 >= 0 {
+					f.state.cursorY--
+				}
+			} else {
+				f.stateMu.Lock()
+				defer f.stateMu.Unlock()
+
+				if f.state.y+1 < len(f.state.matched) {
+					f.state.y++
+				}
+				_, height := f.term.size()
+				if f.state.cursorY+1 < height-2 && f.state.cursorY+1 < len(f.state.matched) {
+					f.state.cursorY++
+				}
 			}
 		case termbox.KeyTab:
 			if !f.opt.multi {

@@ -4,6 +4,7 @@ type opt struct {
 	mode        mode
 	previewFunc func(i, width, height int) string
 	multi       bool
+	reverse     bool
 }
 
 type mode int
@@ -47,5 +48,12 @@ func WithPreviewWindow(f func(i, width, height int) string) Option {
 func withMulti() Option {
 	return func(o *opt) {
 		o.multi = true
+	}
+}
+
+// WithReverse enables to reverse a prompt and items.
+func WithReverse() Option {
+	return func(o *opt) {
+		o.reverse = true
 	}
 }
